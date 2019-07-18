@@ -23,7 +23,7 @@ variable "owner" {
   default = "TonyPulickal"
 }
 
-variable "TTL" {
+variable "ttl" {
   description = "resource TTL"
   default = "24"
 }
