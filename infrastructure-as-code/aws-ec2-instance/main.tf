@@ -12,9 +12,10 @@ resource "aws_instance" "ubuntu" {
   availability_zone = "${var.aws_region}a"
 
   tags = {
-    Terraform = "true"
-    Environment = "${var.env}"
-    Owner = "${var.owner}"
-    TTL = "${var.TTL}"
+    tfmanaged = "true"
+    env = "${var.env}"
+    owner = "${var.owner}"
+    ttl = "${var.ttl}"
+    Name = "${var.name}"
   }
 }
