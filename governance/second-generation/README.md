@@ -2,13 +2,18 @@
 
 This directory and its sub-directories contain second-generation Sentinel policies which were created in 2019 for several clouds including AWS, Microsoft Azure, Google Cloud Platform (GCP), and VMware. It also contains some common, re-usable functions and mocks that can be used to test the new policies with the [Sentinel Simulator](https://docs.hashicorp.com/sentinel/commands).
 
+These policies are intended for use with Terraform 0.11.x and 0.12.x.
+
+## Note about Using These Policies with Terraform Enterprise
+These policies test whether resources are being destroyed using the [destroy](https://www.terraform.io/docs/cloud/sentinel/import/tfplan.html#value-destroy) and [requires_new](https://www.terraform.io/docs/cloud/sentinel/import/tfplan.html#value-requires_new) values that were added to Terraform Cloud (https://app.terraform.io) on 8/15/2019 and to Terraform Enterprise (formerly known as PTFE) in the v201909-1 release on 9/13/2019. Please upgrade to that release or higher before using these policies on your Terraform Enterprise server. (If you are not currently able to upgrade your TFE server, see an older version of this document for a workaround that allows you to use these policies on older versions of TFE.)
+
 ## Improvements
 These new second-generation policies have several improvements over the older first-generation policies:
 1. They use some common parameterized functions including [find_resources_from_plan(type)](./common-functions/plan/find_resources_from_plan.md) and [validate_attribute_in_list(type, attribute, allowed_values)](./common-functions/plan/validate_attribute_in_list.md), which can be used unchanged in all policies that use the associated import. Using these reduces the amount of changes needed when writing new policies.
 1. They have been written in a way that causes all violations or all rules to be reported. Older policies typically only reported the first violation of the first rule that had one. This is accomplished by offloading all of the processing from rules to functions.
 1. They print out the full address of each resource instance that does violate a rule in the same format that is used in plan and apply logs, namely `module.<A>.module.<B>.<type>.<name>[<index>]`.
 1. They are designed to make Sentinel's default output less verbose. Users looking at Sentinel policy violations that occur during their runs will get all the information they need from the messages explicitly printed from the policies using Sentinel's `print` function.
-1. They skip resources that are being destroyed since policy violations for them are not usually of interest.
+1. They skip resources that are being destroyed but not re-created since policy violations for them are not usually of interest. It is important to check the condition `r.destroy and not r.requires_new` rather than `r.destroy` by itself to avoid skipping resources that are being temporarily destroyed and then re-created. Terraform does this when changing certain attributes cannot be done for an existing resource. 
 1. They test whether resource attributes are computed to avoid errors. Note that the validation functions can be modified to consider computed values of specific attributes to be violations.
 
 ## Common Functions
