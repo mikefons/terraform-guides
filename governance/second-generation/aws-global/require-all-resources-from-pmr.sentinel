@@ -6,6 +6,19 @@
 import "tfconfig"
 import "strings"
 
+##### Parameters #####
+# Address of the TFC or TFE server
+param address default "app.terraform.io"
+# Organization on the TFC or TFE server
+param organization
+
+##### Global Variables #####
+## Define the address of the TFE server
+#address = "app.terraform.io"
+#
+## Define organization variable
+#organization = "TonyPulickal"
+
 #####Functions#####
 
 #Prevent resources in root module
@@ -38,13 +51,6 @@ require_modules_from_pmr = func(address, organization) {
 
   return validated
 }
-
-##### Global Variables #####
-# Define the address of the TFE server
-address = "app.terraform.io"
-
-# Define organization variable
-organization = "Cloud-Operations"
 
 ##### Rules #####
 
