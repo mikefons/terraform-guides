@@ -17,6 +17,15 @@ restrict_cost_and_percentage_increase = func(limit, max_percent) {
 
   validated = true
 
+  # Check whether cost estimate is available
+  # It should be for Terraform 0.12.x
+  # It should not be for Terraform 0.11.x
+  if tfrun.cost_estimate else null is null {
+    print("No cost estimates available")
+    # Allow the policy to pass
+    return true
+  }
+
   # Determine cost data
   prior_cost = decimal.new(tfrun.cost_estimate.prior_monthly_cost)
   proposed_cost = decimal.new(tfrun.cost_estimate.proposed_monthly_cost)
@@ -25,7 +34,7 @@ restrict_cost_and_percentage_increase = func(limit, max_percent) {
   # Compare proposed monthly cost to the limit
   if proposed_cost.gt(limit) {
     print("Proposed monthly cost", proposed_cost.string,
-          "is over the limit:", limit.string)
+          "is over the limit: $", limit.string)
     validated = false
   }
 
@@ -54,7 +63,11 @@ limit = decimal.new(1000)
 max_percent = decimal.new(10.0)
 
 ##### Rules #####
+
+# Call the validation function
 cost_validated = restrict_cost_and_percentage_increase(limit, max_percent)
+
+# Main rule
 main = rule {
   cost_validated
 }

@@ -1,6 +1,8 @@
 # Openshift Cluster in AWS
 This guide provisions an OpenShift Origin 3.11 cluster in AWS with 1 master node, 1 client node, and 1 bastion host. It uses Terraform's [AWS Provider](https://www.terraform.io/docs/providers/aws/index.html) to provision AWS infrastructure. It then uses ansible-playbook to deploy OpenShift to the master and client nodes from the bastion host after using Terraform to provision the AWS infrastructure. It is based on a [terraform-aws-openshift](https://github.com/dwmkerr/terraform-aws-openshift) repository created by Dave Kerr.
 
+It was written for use with Terraform 0.11.x.
+
 While the original repository required the user to manually run ansible-playbook after provisioning the AWS infrastructure with Terraform, this guide uses a Terraform [remote-exec provisioner](https://www.terraform.io/docs/provisioners/remote-exec.html) to do that. It also uses several additional remote-exec and local-exec provisioners to automate the rest of the deployment, retrieve the OpenShift cluster keys, and write them to outputs. This is important since it allows workspaces that deploy pods and services to the cluster do that via workspace state sharing without any manual copying of the cluster keys.
 
 ## Reference Material
@@ -10,7 +12,7 @@ While the original repository required the user to manually run ansible-playbook
 * [ansible-playbook](https://docs.ansible.com/ansible/2.4/ansible-playbook.html): the actual ansible tool used to deploy the OpenShift cluster. This is used in the install-from-bastion.sh script.
 
 ## Estimated Time to Complete
-60 minutes
+120 minutes
 
 ## Personas
 Our target persona is a developer or operations engineer who wants to provision an OpenShift cluster into AWS.
@@ -30,6 +32,7 @@ Note that this guide is intended for demo and development usage. You would proba
 1. Sign up for a free [AWS](https://aws.amazon.com/free/) account.
 1. Create AWS access keys for your account. See the [Managing Access Keys for Your AWS Account](https://docs.aws.amazon.com/general/latest/gr/managing-aws-access-keys.html).
 1. Create an AWS key pair for your AWS account. See [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
+1. Use a Vault server with version 1.2 or higher.
 
 ## Steps
 Execute the following commands to deploy your OpenShift cluster to AWS.
@@ -47,7 +50,7 @@ vault write aws-tf/config/root \
   access_key=<your_aws_access_key> \
   secret_key=<your_aws_secret_key> \
   region=us-east-1
-  
+
 vault write aws-tf/roles/deploy policy_document=-<<EOF
 {
   "Version": "2012-10-17",
@@ -84,7 +87,9 @@ If you want to use open source Terraform instead of TFE, you can create a copy o
 1. On the Latest Run tab, you should see a new run. If the plan succeeds, you can view the plan and verify that the AWS infrastructure will be created and that various remote-exec and local-exec provisioners will run when you apply your plan.
 1. Click the "Confirm and Apply" button to actually provision your OpenShift cluster.
 
-You will see outputs providing the IPs and DNS addresses needed to access your OpenShift cluster in the AWS Console, TLS certs/keys for your cluster, the Vault Kubernetes auth method path, the Vault server address, and your Vault username. You will need these when using Terraform's Kubernetes Provider to provision Kubernetes pods and services in other workspaces that use your OpenShift cluster. You can also validate that the cluster was created in the AWS Console.
+Unfortunately, the Ansible playbook that provisions the OpenShift cluster takes 80-90 minutes to do it.  To accomodate this, we have set the `max_lease_ttl_seconds` attribute on the Vault provider to 7200 seconds (2 hours).
+
+When the Ansible playbook finally deploys the OpenShift cluster and a few other null resources are run by Terraform, you will see outputs providing the IPs and DNS addresses needed to access your OpenShift cluster in the AWS Console, TLS certs/keys for your cluster, the Vault Kubernetes auth method path, the Vault server address, and your Vault username. You will need these when using Terraform's Kubernetes Provider to provision Kubernetes pods and services in other workspaces that use your OpenShift cluster. You can also validate that the cluster was created in the AWS Console.
 
 You will be able to login to the OpenShift Console with username "admin" and password "123" at the URL contained in the k8s_endpoint output of the apply.log. To use the OpenShift `oc` CLI utility, you may SSH into the bastion host using `bastion_public_ip` output, then to the OpenShift master server using `master_private_ip` output from the apply log.
 

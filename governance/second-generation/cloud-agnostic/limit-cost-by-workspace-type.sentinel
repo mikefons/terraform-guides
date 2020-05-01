@@ -13,6 +13,15 @@ import "decimal"
 # Validate that the proposed monthly cost is less than the limit
 limit_cost_by_workspace_type = func(limits) {
 
+  # Check whether cost estimate is available
+  # It should be for Terraform 0.12.x
+  # It should not be for Terraform 0.11.x
+  if tfrun.cost_estimate else null is null {
+    print("No cost estimates available")
+    # Allow the policy to pass
+    return true
+  }
+
   # Get workspace name
   workspace_name = tfrun.workspace.name
 
@@ -34,12 +43,12 @@ limit_cost_by_workspace_type = func(limits) {
   if proposed_cost.lte(limit) {
     print("Proposed monthly cost", proposed_cost.string,
           "of workspace", workspace_name,
-          "is under the limit:", limit.string)
+          "is under the limit: $", limit.string)
     return true
   } else {
     print("Proposed monthly cost", proposed_cost.string,
           "of workspace", workspace_name,
-          "is over the limit:", limit.string)
+          "is over the limit: $", limit.string)
     return false
   }
 }
@@ -53,7 +62,11 @@ limits = {
 }
 
 ##### Rules #####
+
+# Call the validation function
 cost_validated = limit_cost_by_workspace_type(limits)
+
+# Main rule
 main = rule {
   cost_validated
 }
