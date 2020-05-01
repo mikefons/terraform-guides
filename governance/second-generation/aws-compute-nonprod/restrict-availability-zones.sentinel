@@ -69,7 +69,7 @@ validate_attribute_in_list = func(type, attribute, allowed_values) {
       # validated = false
     } else {
       # Validate that each instance has allowed value
-      if (r.applied[attribute] else "") not in allowed_values {
+      if r.applied[attribute] else "" not in allowed_values {
         print("Resource", address, "has attribute", attribute, "with value",
               r.applied[attribute] else "",
               "that is not in the allowed list:", allowed_values)
@@ -85,20 +85,23 @@ validate_attribute_in_list = func(type, attribute, allowed_values) {
 
 # Allowed EC2 Zones
 allowed_zones = [
+  "us-west-1a",
+  "us-west-1b",
+  "us-west-1c",
   "us-east-1a",
   "us-east-1b",
   "us-east-1c",
   "us-east-1d",
   "us-east-1e",
   "us-east-1f",
-  "us-west-1a",
-  "us-west-1b",
-  "us-west-1c",
 ]
 
 ##### Rules #####
 
-# Main rule that calls the validation function and evaluates results
+# Call the validation function
+zones_validated = validate_attribute_in_list("aws_instance", "availability_zone", allowed_zones)
+
+# Main rule
 main = rule {
-  validate_attribute_in_list("aws_instance", "availability_zone", allowed_zones)
+  zones_validated
 }
