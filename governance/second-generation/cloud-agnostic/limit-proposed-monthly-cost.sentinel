@@ -12,17 +12,26 @@ import "decimal"
 # Validate that the proposed monthly cost is less than the limit
 limit_proposed_monthly_cost = func(limit) {
 
+  # Check whether cost estimate is available
+  # It should be for Terraform 0.12.x
+  # It should not be for Terraform 0.11.x
+  if tfrun.cost_estimate else null is null {
+    print("No cost estimates available")
+    # Allow the policy to pass
+    return true
+  }
+
   # Determine proposed monthly cost
   proposed_cost = decimal.new(tfrun.cost_estimate.proposed_monthly_cost)
 
   # Compare proposed monthly cost to the limit
   if proposed_cost.lte(limit) {
     print("Proposed monthly cost", proposed_cost.string,
-          "is under the limit:", limit.string)
+          "is under the limit: $", limit.string)
     return true
   } else {
     print("Proposed monthly cost", proposed_cost.string,
-          "is over the limit:", limit.string)
+          "is over the limit: $", limit.string)
     return false
   }
 }
@@ -31,7 +40,11 @@ limit_proposed_monthly_cost = func(limit) {
 limit = decimal.new(1000)
 
 ##### Rules #####
+
+# Call the validation function
 cost_validated = limit_proposed_monthly_cost(limit)
+
+# Main rule
 main = rule {
   cost_validated
 }

@@ -6,7 +6,7 @@ terraform {
 # Set VAULT_TOKEN environment variable
 provider "vault" {
   address = "${var.vault_addr}"
-  max_lease_ttl_seconds = 3600
+  max_lease_ttl_seconds = 7200
 }
 
 # AWS credentials from Vault
@@ -203,6 +203,6 @@ resource "vault_kubernetes_auth_backend_role" "role" {
   role_name = "demo"
   bound_service_account_names = ["cats-and-dogs"]
   bound_service_account_namespaces = ["default", "cats-and-dogs"]
-  policies = ["${var.vault_user}"]
-  ttl = 7200
+  token_policies = ["${var.vault_user}"]
+  token_ttl = 7200
 }
